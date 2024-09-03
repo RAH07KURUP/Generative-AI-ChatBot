@@ -14,31 +14,43 @@ from django.contrib.auth.models import AnonymousUser
 from django.urls import reverse
 from django.http import JsonResponse
 
+
 #openai_api_key = os.getenv(OP)
 #openai.api_key = openai_api_key
 
-def ask_openai(message):
-    system_content = "You are an helpful assistant."
-    user_content = message
+def ask_openai(message, chat_history):
+    system_content = "You are an AI assistant who knows everything. Try to keep your answer short and brief."
 
-    client = openai.OpenAI(
-        api_key=os.getenv(OPEN-AI-KEY),
-        base_url="https://api.aimlapi.com",
-    )
+    # Build the messages list from the chat history
+    messages = [{"role": "system", "content": system_content}]
+    for entry in chat_history.get('data', {}).get('chat_history', []):
+        messages.append({"role": "user", "content": entry['question']})
+        messages.append({"role": "assistant", "content": entry['response']})
 
-    chat_completion = client.chat.completions.create(
-        model="mistralai/Mistral-7B-Instruct-v0.2",
-        messages=[
-            {"role": "system", "content": system_content},
-            {"role": "user", "content": user_content},
-        ],
-        temperature=0.7,
-        max_tokens=128,
-    )
+    # Append the current message
+    messages.append({"role": "user", "content": message})
 
-    answer = chat_completion.choices[0].message.content
-    print(answer)
-    return answer
+    try:
+        client = openai.OpenAI(
+            api_key=os.getenv('OPEN-AI-KEY'),
+            base_url="https://api.aimlapi.com",
+        )
+        
+        chat_completion = client.chat.completions.create(
+            model="mistralai/Mistral-7B-Instruct-v0.2",
+            messages=messages,
+            temperature=0.5,
+            max_tokens=128,
+        )
+        
+        answer = chat_completion.choices[0].message.content
+        return answer
+
+    except Exception as e:
+        # Handle any exception, including rate limit errors
+        if "429" in str(e):
+            return "Free limit exceeded"
+        raise Http404(f"An unexpected error occurred: {str(e)}")
 
 def make_external_request(auth_header,session_id):
      # Construct the URL for the manage-session view
@@ -61,6 +73,18 @@ def make_external_request(auth_header,session_id):
     else:
         return {'error': 'Request failed', 'status_code': response.status_code}
 
+def truncate_to_word_limit(text, word_limit):
+    words = text.split()
+    if len(words) > word_limit:
+        return ' '.join(words[:word_limit]) + '...'
+    else:
+        return text
+def count_words(sentence):
+    # Split the sentence into words based on whitespace and return the count
+    words = sentence.split()
+    return len(words)
+
+
 session_not_existing = "Session does not exist"
 
 
@@ -75,7 +99,6 @@ class CreateChatMessageView(APIView):
         user = self.request.user
         question = request.data.get('question')
        
-        response= question
         
         session_id = request.data.get('session_id')
         is_first_question = False
@@ -94,6 +117,22 @@ class CreateChatMessageView(APIView):
             session = ChatSession.objects.create(user=user, name=question.lower())
             session_id = session.id
             is_first_question = True
+        
+        
+
+        #testing
+        auth=request.headers['Authorization']
+        print('abhi tkk to thik h ',auth)
+        resp=make_external_request(auth,session_id)
+        # Now `response` contains the response from the view
+        print('ye raha\n')
+        print(resp)
+        #testing
+
+        ans=ask_openai(question,resp)
+        #ans=question
+        wl=int(0.73*count_words(ans))
+        response = truncate_to_word_limit(ans, wl) if count_words(ans) > 73 else truncate_to_word_limit(ans, count_words(ans))
 
         # chat history information
         chat_history_info = {
@@ -105,16 +144,6 @@ class CreateChatMessageView(APIView):
 
         # save chat history
         chat_history = ChatHistory.objects.create(**chat_history_info)
-
-        #testing
-        auth=request.headers['Authorization']
-        print('abhi tkk to thik h ',auth)
-        resp=make_external_request(auth,session_id)
-        
-        # Now `response` contains the response from the view
-        print('ye raha\n')
-        print(resp)
-        #testing
         
         if is_first_question:
             chat_history_info["session_name"] = question
@@ -148,15 +177,12 @@ class GetChatSessionsView(APIView):
 
 
 class ManageChatSessionView(APIView):
-    print('yha tkk poncha h ')
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
 
     def get(self, request, *args, **kwargs):
         # retrieve user
         user = self.request.user
-        print("dekh aise\n")
-        print(user)
         session_id = kwargs.get('session_id')
         print('yha tkk poncha h ',session_id)
 

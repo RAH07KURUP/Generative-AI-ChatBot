@@ -14,11 +14,11 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 
-cd ChatGPT-Clone/Backend
+cd Backend
 ./venv_py311/Scripts/activate
 python manage.py runserver
 
-cd ChatGPT-Clone/Frontend
+cd Frontend
 npm run dev
 """
 

@@ -7,17 +7,18 @@ import { setUserData } from "../../redux/slices/userSlice.js";
 import { isRequiredFieldValuesPassed } from "../../utils/helpers.js";
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 
+
 function SignupPage() {
     const navigate = useNavigate();
     const [state, setState] = useState({});
     const [loading, setLoading] = useState(false);
     const [disabled, setDisabled] = useState(false);
     const dispatch = useDispatch();
-console.log(import.meta.env.VITE_GOOGLE_CLIENT_ID)
+
     const register = async () => {
         setLoading(true);
         if (state.password !== state.c_password) {
-            toast.error("Password and Confirm Password must be the same");
+            toast.error("Passwords do not match.");
             setLoading(false);
             return;
         }
@@ -28,7 +29,7 @@ console.log(import.meta.env.VITE_GOOGLE_CLIENT_ID)
             const resp = await axiosClient.post('/auth/register', userInfo);
             dispatch(setUserData(resp.data.data));
             setLoading(false);
-            toast.success("Registration Successful");
+            toast.success("Welcome aboard!");
             navigate('/sessions');
         } catch (error) {
             console.error(error);
@@ -50,7 +51,6 @@ console.log(import.meta.env.VITE_GOOGLE_CLIENT_ID)
     }, [state]);
 
     const onGoogleSuccess = async (response) => {
-        console.log("or bhai");
         setLoading(true);
         try {
             const googleResp = await axiosClient.post('/auth/google', {
@@ -68,82 +68,85 @@ console.log(import.meta.env.VITE_GOOGLE_CLIENT_ID)
     };
 
     const onGoogleFailure = (error) => {
-        console.error('Google Sign Up failed:', error);
-        toast.error("Google Sign Up failed. Please try again.");
+        console.error('Google Sign-Up failed:', error);
+        toast.error("Google Sign-Up failed. Please try again.");
     };
 
     return (
         <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
-            <div className="h-[100vh] flex justify-center items-center">
-                <div>
-                    <h1 className="font-bold text-[25px] text-center mb-5">Signup Page</h1>
-                    <div className="input-group">
-                        <label htmlFor="first_name">First Name*</label>
+            <div className="h-[100vh] flex justify-center items-center bg-gradient-to-br from-gray-700 to-gray-900 p-6">
+                <div className="bg-white max-w-md w-full max-h-[90vh] overflow-auto rounded-lg shadow-lg p-8 hide-scroll">
+                    <h1 className="font-extrabold text-[30px] text-center text-gray-800 mb-6">Create Your Account</h1>
+                    <div className="input-group mb-4">
+                        <label htmlFor="first_name" className="text-gray-600 font-semibold block mb-2">First Name*</label>
                         <input
                             type="text"
-                            className="border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:border-blue-500"
-                            placeholder="First Name"
+                            id="first_name"
+                            className="border border-gray-300 w-full px-4 py-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Enter your first name"
                             name="first_name"
                             onChange={handleChange}
                         />
                     </div>
-                    <div className="input-group">
-                        <label htmlFor="last_name">Last Name*</label>
+                    <div className="input-group mb-4">
+                        <label htmlFor="last_name" className="text-gray-600 font-semibold block mb-2">Last Name*</label>
                         <input
                             type="text"
-                            className="border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:border-blue-500"
-                            placeholder="Last Name"
+                            id="last_name"
+                            className="border border-gray-300 w-full px-4 py-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Enter your last name"
                             name="last_name"
                             onChange={handleChange}
                         />
                     </div>
-                    <div className="input-group">
-                        <label htmlFor="email">Email*</label>
+                    <div className="input-group mb-4">
+                        <label htmlFor="email" className="text-gray-600 font-semibold block mb-2">Email Address*</label>
                         <input
                             type="email"
-                            className="border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:border-blue-500"
-                            placeholder="Email"
+                            id="email"
+                            className="border border-gray-300 w-full px-4 py-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Enter your email"
                             name="email"
                             onChange={handleChange}
                         />
                     </div>
-                    <div className="input-group">
-                        <label htmlFor="password">Password*</label>
+                    <div className="input-group mb-4">
+                        <label htmlFor="password" className="text-gray-600 font-semibold block mb-2">Password*</label>
                         <input
                             type="password"
-                            placeholder="Password"
-                            className="border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:border-blue-500"
+                            id="password"
+                            className="border border-gray-300 w-full px-4 py-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Enter your password"
                             name="password"
                             onChange={handleChange}
                         />
                     </div>
-                    <div className="input-group">
-                        <label htmlFor="c_password">Confirm Password*</label>
+                    <div className="input-group mb-6">
+                        <label htmlFor="c_password" className="text-gray-600 font-semibold block mb-2">Confirm Password*</label>
                         <input
                             type="password"
-                            placeholder="Confirm Password"
-                            className="border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:border-blue-500"
+                            id="c_password"
+                            className="border border-gray-300 w-full px-4 py-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Re-enter your password"
                             name="c_password"
                             onChange={handleChange}
                         />
                     </div>
-                    <div className="flex justify-center flex-col">
-                        <button
-                            className="bg-blue-500 text-white px-3 py-2 rounded-md cursor-pointer"
-                            disabled={disabled || loading}
-                            onClick={register}
-                        >
-                            {loading ? "Loading..." : "Register"}
-                        </button>
-                        <span className="text-[13px] ml-3 text-center mt-4">
-                            Already have an account?
-                            <u className="cursor-pointer ml-2" onClick={() => navigate('/login')}>
-                                Login
-                            </u>
-                        </span>
+                    <button
+                        className="w-full bg-blue-600 text-white py-3 rounded-md font-semibold hover:bg-blue-700 transition duration-300"
+                        disabled={disabled || loading}
+                        onClick={register}
+                    >
+                        {loading ? "Creating Account..." : "Sign Up"}
+                    </button>
+                    <div className="text-center mt-4">
+                        <span className="text-gray-600 text-[14px]">Already a member?</span>
+                        <u className="cursor-pointer text-blue-600 ml-2" onClick={() => navigate('/login')}>
+                            Log In
+                        </u>
                     </div>
                     <div className="flex justify-center items-center mt-4">
-                        <p className="text-center">Or Sign Up with Google</p>
+                        <p className="text-center text-gray-600">Or sign up with Google</p>
                     </div>
                     <div className="flex justify-center mt-2">
                         <GoogleLogin

@@ -1,16 +1,17 @@
-import React, {useEffect, useRef, useState} from "react";
-import {BsSend} from "react-icons/bs";
-import {axiosClientWithHeaders} from "../../libs/axiosClient.js";
-import {formatDate} from "../../utils/helpers.js";
-import {useDispatch, useSelector} from "react-redux";
-import {setQuestionsData, updateQuestionsData} from "../../redux/slices/questionsSlice.js";
-import {useNavigate} from "react-router-dom";
-import {updateSessionsData} from "../../redux/slices/sessionsSlice.js";
+import React, { useEffect, useRef, useState } from "react";
+import { BsSend } from "react-icons/bs";
+import { axiosClientWithHeaders } from "../../libs/axiosClient.js";
+import { formatDate } from "../../utils/helpers.js";
+import { useDispatch, useSelector } from "react-redux";
+import { setQuestionsData, updateQuestionsData } from "../../redux/slices/questionsSlice.js";
+import { useNavigate } from "react-router-dom";
+import { updateSessionsData } from "../../redux/slices/sessionsSlice.js";
+import './chatContent.scss'
 
 function ChatContent({ id }) {
     const questions = useSelector((state) => state.questions.questions);
     const [question, setQuestion] = useState("");
-    const [cur, setCur] = useState("");
+    const [respErr, setrespErr] = useState(0);const [anim, setAnim] = useState('animate-pulse');
     const [loadingQuestions, setLoadingQuestions] = useState([]);
 
     const dispatch = useDispatch();
@@ -20,26 +21,23 @@ function ChatContent({ id }) {
     const getMessages = async () => {
         try {
             const resp = await axiosClientWithHeaders.get(`chat/sessions/${id}`);
-            console.log(resp);
             dispatch(setQuestionsData(resp.data.data.chat_history));
         } catch (error) {
             console.error(error);
         }
-    }
+    };
 
-    const saveMessage = async () => {
-        setQuestion("");
-        if(question.trim() == '') return;
+    const saveMessage = async (cur) => {
+        setQuestion(""); // Clear the input field
+        if (cur.trim() === '') return; // Check for empty input
         const data = {
-            question,
-        }
+            question: cur,
+        };
         if (id) {
             data.session_id = id;
         }
 
-        // Add the question with "Loading..." to the temporary loading state
-        setLoadingQuestions( [{ question, response: "Loading...", created_on: new Date() }]); 
-        
+        setLoadingQuestions([{ question: cur, response: "Loading...", created_on: new Date() }]);
 
         try {
             const resp = await axiosClientWithHeaders.post(`chat/messages`, data);
@@ -50,28 +48,27 @@ function ChatContent({ id }) {
             delete respData.session;
             delete respData?.name;
 
-            // Update the questions data by replacing the last loading question with the actual response
             setLoadingQuestions((prev) => prev.slice(0, -1));
             dispatch(updateQuestionsData(respData));
 
             if (sessionName) {
                 dispatch(updateSessionsData(sessionData));
-                navigate(`/sessions/${respData.session_id}`)
+                navigate(`/sessions/${respData.session_id}`);
             }
         } catch (error) {
             console.error(error);
-            // Remove the "Loading..." entry if the request fails
-            setLoadingQuestions([{ question, response: "Failed to respond", created_on: new Date() }]);
+            setLoadingQuestions([{ question: cur, response: "Failed to respond", created_on: new Date() }]);
+            setrespErr(1);setAnim('');
         }
-    }
+    };
 
     const scrollToBottom = () => {
         containerRef.current.scrollTop = containerRef.current.scrollHeight;
-    }
+    };
 
     const handleKeyPress = async (e) => {
-        if (e.code === 'Enter' && question.trim() !== ''&&loadingQuestions.length==0) {
-            await saveMessage();
+        if (e.code === 'Enter' && question.trim() !== '' && loadingQuestions.length === 0) {
+            await saveMessage(question);
         }
     };
 
@@ -86,35 +83,58 @@ function ChatContent({ id }) {
     }, [questions, loadingQuestions]);
 
     return (
-        <div className="flex-grow flex flex-col justify-between p-4 bg-[#3A4454]">
-            <div className="flex items-center flex-col h-[88vh] overflow-auto" ref={containerRef}>
-                {!id &&  <p className="text-center w-full text-white">New Chat</p>}
-                {id && [...questions, ...loadingQuestions].map((question, index) =>
-                    <div className="w-full flex flex-col" key={index}>
-                        <div className="flex flex-col bg-[#53687E] text-white p-4">
-                            <span>{question.question}</span>
-                            <span className="flex justify-end text-[10px]">{formatDate(question.created_on)}</span>
+        <div className="flex-grow flex flex-col justify-between p-6 bg-gradient-to-br from-gray-800 to-gray-900 text-white">
+            <div className="flex items-center flex-col h-[88vh] overflow-auto space-y-4 hide-scroll" ref={containerRef}>
+                {!id && <p className="text-center w-full text-gray-400 italic">Start a new chat...</p>}
+                {id && questions.map((question, index) => (
+                    <div className="w-full flex flex-col space-y-2" key={index}>
+                        <div className="flex flex-col bg-gray-700 text-white p-4 rounded-lg shadow-md">
+                            <span className="break-words">{question.question}</span>
+                            <span className="flex justify-end text-xs text-gray-400">{formatDate(question.created_on)}</span>
                         </div>
-                        <div className="text-white p-4">{question.response}</div>
+                        <div className="bg-blue-600 text-white p-4 rounded-lg shadow-md break-words">
+                            {question.response}
+                        </div>
                     </div>
-                )}
+                ))}
+                {loadingQuestions.map((question, index) => (
+                    <div className="w-full flex flex-col space-y-2" key={index}>
+                        <div className="flex flex-col bg-gray-700 text-white p-4 rounded-lg shadow-md">
+                            <span className="break-words">{question.question}</span>
+                            <span className="flex justify-end text-xs text-gray-400">{formatDate(question.created_on)}</span>
+                        </div>
+                        <div className={`bg-blue-600 text-white p-4 rounded-lg shadow-md break-words ${anim}`}>
+                            {question.response}
+                        </div>
+                    </div>
+                ))}
             </div>
-            <div className="relative bottom-2">
-                <div className="flex w-full items-center border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:border-blue-500">
+            <div className="relative bottom-2 mt-4">
+                {respErr===0&&<div className="flex w-full items-center border border-gray-700 px-3 py-2 rounded-lg bg-gray-800 focus-within:ring-2 ring-blue-600">
                     <input
                         type="text"
-                        placeholder="Send question"
+                        placeholder="Type your message..."
                         value={question}
-                        onChange={(e) => {setQuestion(e.target.value);
-                            if(e.target.value.trim()!='' && loadingQuestions.length==0) setCur(e.target.value);}}
-                        className="w-full focus-visible:outline-none bg-inherit text-white"
+                        onChange={(e) => setQuestion(e.target.value)}
+                        className="w-full bg-transparent text-white placeholder-gray-400 focus:outline-none"
                         onKeyDown={handleKeyPress}
                     />
-                    {loadingQuestions.length==0&&<BsSend size={20} className="cursor-pointer text-white" onClick={saveMessage} />}
-                </div>
+                    {loadingQuestions.length === 0 && (
+                        <BsSend
+                            size={24}
+                            className="cursor-pointer text-blue-500 hover:text-blue-400 transition-colors"
+                            onClick={() => saveMessage(question)}
+                        />
+                    )}
+                </div>}
+                {respErr === 1 && (
+                    <p className="mt-2 text-red-500 text-sm text-center">
+                        Something went wrong.<br/> <button className="mt-2 text-white text-sm text-center" onClick={() => window.location.reload()}>⟳ </button>
+                    </p>
+                )}
             </div>
         </div>
-    )
+    );
 }
 
 export default ChatContent;
