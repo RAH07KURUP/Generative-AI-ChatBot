@@ -73,6 +73,7 @@ function ChatContent({ id }) {
     };
 
     useEffect(() => {
+        setLoadingQuestions([]);setrespErr(0);
         if (id) {
             getMessages();
         }

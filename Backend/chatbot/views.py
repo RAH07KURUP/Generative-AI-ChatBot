@@ -104,6 +104,7 @@ class CreateChatMessageView(APIView):
         is_first_question = False
 
         session = None
+        f_ans=None
 
         # check if session id exists
         if session_id is not None:
@@ -114,22 +115,26 @@ class CreateChatMessageView(APIView):
                 return Response(resp_data, status=400)
         else:
             # create session
+            f_ans=ask_openai(question,{'data':{'chat_history':[]}})
             session = ChatSession.objects.create(user=user, name=question.lower())
             session_id = session.id
             is_first_question = True
         
-        
-
-        #testing
-        auth=request.headers['Authorization']
-        print('abhi tkk to thik h ',auth)
-        resp=make_external_request(auth,session_id)
-        # Now `response` contains the response from the view
-        print('ye raha\n')
-        print(resp)
-        #testing
-
-        ans=ask_openai(question,resp)
+        resp=None
+        if f_ans is None:
+            #testing
+            auth=request.headers['Authorization']
+            print('abhi tkk to thik h ',auth)
+            resp=make_external_request(auth,session_id)
+            # Now `response` contains the response from the view
+            print('ye raha\n')
+            print(resp)
+            #testing
+        ans=None
+        if f_ans is not None:
+            ans=f_ans
+        else:
+            ans=ask_openai(question,resp)
         #ans=question
         wl=int(0.73*count_words(ans))
         response = truncate_to_word_limit(ans, wl) if count_words(ans) > 73 else truncate_to_word_limit(ans, count_words(ans))
