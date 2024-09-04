@@ -9,14 +9,9 @@ import os
 from chatbot.models import ChatHistory, ChatSession
 import openai
 import requests
-from django.test import RequestFactory
-from django.contrib.auth.models import AnonymousUser
 from django.urls import reverse
 from django.http import JsonResponse
 
-
-#openai_api_key = os.getenv(OP)
-#openai.api_key = openai_api_key
 
 def ask_openai(message, chat_history):
     system_content = "You are an AI assistant who knows everything. Try to keep your answer short and brief."
@@ -115,9 +110,12 @@ class CreateChatMessageView(APIView):
         else:
             # create session
             f_ans=ask_openai(question,{})
-            session = ChatSession.objects.create(user=user, name=question.lower())
-            session_id = session.id
-            is_first_question = True
+            if f_ans is "Free limit exceeded": 
+                return JsonResponse({'status': 'success', "data": f_ans}, safe=False)
+            else:
+                session = ChatSession.objects.create(user=user, name=question.lower())
+                session_id = session.id
+                is_first_question = True
         
         resp=None
         if f_ans is None:
@@ -131,12 +129,11 @@ class CreateChatMessageView(APIView):
             ans=f_ans
         else:
             ans=ask_openai(question,resp)
-        #ans=question
+        if ans is "Free limit exceeded": 
+                return JsonResponse({'status': 'success', "data": ans}, safe=False)
+
         wl=int(0.73*count_words(ans))
         response = truncate_to_word_limit(ans, wl) if count_words(ans) > 73 else truncate_to_word_limit(ans, count_words(ans))
-
-        if response is "Free limit exceeded": 
-            return JsonResponse({'status': 'success', "data": response}, safe=False)
 
         # chat history information
         chat_history_info = {

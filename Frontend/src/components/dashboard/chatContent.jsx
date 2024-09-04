@@ -76,7 +76,7 @@ function ChatContent({ id }) {
     
 
     useEffect(() => {
-        setLoadingQuestions([]);setrespErr(0);setAnim('animate-pulse')
+        setLoadingQuestions([]);setrespErr(0);setAnim('animate-pulse');setQuestion('');
         if (id) {
             getMessages();
         }
