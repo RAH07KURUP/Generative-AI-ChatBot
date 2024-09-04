@@ -115,7 +115,7 @@ class CreateChatMessageView(APIView):
                 return Response(resp_data, status=400)
         else:
             # create session
-            f_ans=ask_openai(question,{'data':{'chat_history':[]}})
+            f_ans=ask_openai(question,{})
             session = ChatSession.objects.create(user=user, name=question.lower())
             session_id = session.id
             is_first_question = True
@@ -138,6 +138,9 @@ class CreateChatMessageView(APIView):
         #ans=question
         wl=int(0.73*count_words(ans))
         response = truncate_to_word_limit(ans, wl) if count_words(ans) > 73 else truncate_to_word_limit(ans, count_words(ans))
+
+        if response is "Free limit exceeded": 
+            return JsonResponse({'status': 'success', "data": response}, safe=False)
 
         # chat history information
         chat_history_info = {

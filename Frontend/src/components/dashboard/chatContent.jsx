@@ -42,6 +42,8 @@ function ChatContent({ id }) {
         try {
             const resp = await axiosClientWithHeaders.post(`chat/messages`, data);
             const respData = resp.data.data;
+            if(respData=="Free limit exceeded") {setLoadingQuestions([{ question: cur, response: "You have exceeded the hourly rate limit. Try again after sometime.", created_on: new Date() }]);
+            setrespErr(1);setAnim('');return;}
             const sessionData = respData?.session;
             const sessionName = respData?.session_name;
 
@@ -71,9 +73,10 @@ function ChatContent({ id }) {
             await saveMessage(question);
         }
     };
+    
 
     useEffect(() => {
-        setLoadingQuestions([]);setrespErr(0);
+        setLoadingQuestions([]);setrespErr(0);setAnim('animate-pulse')
         if (id) {
             getMessages();
         }
