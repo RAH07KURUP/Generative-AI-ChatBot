@@ -62,10 +62,10 @@ def make_external_request(auth_header,session_id):
     headers = {
         'Authorization': auth_header,
     }
-    print('ye to dekh ',headers," ",url)
+
     # Make the GET request with headers
     response = requests.get(absolute_url, headers=headers)
-    print('yhaa to dekh ',response)
+
 
     # Handle the response
     if response.status_code == 200:
@@ -94,7 +94,6 @@ class CreateChatMessageView(APIView):
 
     def post(self, request, *args, **kwargs):
 
-        print("le pakad ",request.headers['Authorization'])
         # retrieve user
         user = self.request.user
         question = request.data.get('question')
@@ -122,14 +121,11 @@ class CreateChatMessageView(APIView):
         
         resp=None
         if f_ans is None:
-            #testing
             auth=request.headers['Authorization']
-            print('abhi tkk to thik h ',auth)
+
             resp=make_external_request(auth,session_id)
             # Now `response` contains the response from the view
-            print('ye raha\n')
-            print(resp)
-            #testing
+
         ans=None
         if f_ans is not None:
             ans=f_ans
@@ -192,7 +188,6 @@ class ManageChatSessionView(APIView):
         # retrieve user
         user = self.request.user
         session_id = kwargs.get('session_id')
-        print('yha tkk poncha h ',session_id)
 
         # retrieve user chat session
         try:
