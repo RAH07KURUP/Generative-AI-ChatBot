@@ -24,10 +24,13 @@ npm run dev
 
 from django.contrib import admin
 from django.urls import path, include
+from django.views.generic import TemplateView
+from . import views
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("auth/", include("authentication.urls")),
     path("chat/", include("chatbot.urls")),
+    path('', TemplateView.as_view(template_name='frontend_build/index.html')),
 ]
 
