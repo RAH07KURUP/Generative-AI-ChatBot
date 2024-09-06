@@ -1,4 +1,4 @@
-import {resetUserData} from "../Redux/slices/userSlice";
+import {resetUserData} from "../redux/slices/userSlice";
 import store from "../redux/store";
 
 export const getUserData = () => {
